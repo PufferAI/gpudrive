@@ -223,14 +223,14 @@ class Env(gym.Env):
         self.surf = pygame.Surface((WINDOW_W, WINDOW_H))  
         self.surf.fill((255, 255, 255)) # White background
         
-        # # # Draw the road map # # # 
+        # # # (1) Draw the road map # # # 
         roadmap_info = self.sim.map_observation_tensor().to_torch()[self.world_render_idx, :, :].cpu().detach().numpy()
         roadmap_pos = roadmap_info[:, :2]
         roadmap_heading = roadmap_info[:, 2:]
         scaled_rm_positions = [self.scale_coord(pos, roadmap_pos) for pos in roadmap_pos]
         pygame.draw.lines(self.surf, (0, 0, 0), False, scaled_rm_positions)
         
-        # Draw the agents
+        # # # (2) Draw the agents # # # 
         # We only render agents from the chosen world index
         # Access the positions of the agents
         agent_info = self.sim.absolute_self_observation_tensor().to_torch()[
