@@ -163,7 +163,6 @@ class Env(gym.Env):
     
         return Discrete(n=int(len(self.action_key_to_values)))
     
-    
     def _set_observation_space(self) -> None:
         """Configure the observation space."""
         return Box(low=-np.inf, high=np.inf, shape=(self.get_obs().shape[-1],))
@@ -189,7 +188,6 @@ class Env(gym.Env):
         map_obs_tensor = self.sim.agent_roadmap_tensor().to_torch().flatten(start_dim=2)
         
         return torch.cat([ego_state, partner_obs_tensor, map_obs_tensor], dim=-1)
-    
     
     def render(self, t=None):
         """Render the environment."""
