@@ -21,9 +21,11 @@ logging.getLogger(__name__)
 
 WINDOW_W = 500
 WINDOW_H = 500
-VEH_WIDTH = 25
-VEH_HEIGHT = 50
-GOAL_RADIUS = 10
+WINDOW_SIZE = (WINDOW_W, WINDOW_H)
+# Vehicles are pretty big atm since they are far apart, can have a better way of sizing the vehicles relative to the window 
+VEH_WIDTH = 25 * 50
+VEH_HEIGHT = 50 * 50
+GOAL_RADIUS = 10 * 50
 COLOR_LIST = [
     (255, 0, 0),   # Red
     (0, 255, 0),   # Green
@@ -95,6 +97,8 @@ class Env(gym.Env):
         
         # Set observation space        
         self.observation_space = self._set_observation_space()
+
+        self.agent_colors = {}
                 
     def reset(self):
         """Reset the worlds and return the initial observations."""
@@ -145,7 +149,7 @@ class Env(gym.Env):
         # or the episode is over 
         #TODO: also reset when all agents have collided
         is_collided = torch.index_select(self.sim.self_observation_tensor().to_torch()[:, :, 5], dim=1, index=self.cont_agent_idx)
-        
+    
         return obs, reward, done, info
     
     def _set_discrete_action_space(self) -> None:
@@ -226,7 +230,7 @@ class Env(gym.Env):
         roadmap_pos = roadmap_info[:, :2]
         roadmap_heading = roadmap_info[:, 2:]
         scaled_rm_positions = [self.scale_coord(pos, roadmap_pos) for pos in roadmap_pos]
-        pygame.draw.lines(self.surf, (0, 0, 0), False, scaled_rm_positions)
+        # pygame.draw.lines(self.surf, (0, 0, 0), False, scaled_rm_position)
         
         # # # (2) Draw the agents # # # 
         # We only render agents from the chosen world index
@@ -237,19 +241,38 @@ class Env(gym.Env):
         agent_rot_quaternions = agent_info[:, 3:7] # rotation as quaternion
         agent_rot_rad = agent_info[:, 7:8] # rotation from x-axis in radians
         agent_goal_positions = agent_info[:, 8:]
-        
+
+
+        if t == 0: 
+            for agent_idx in range(agent_info.shape[0]):
+                self.agent_colors[agent_idx] = random.choice(COLOR_LIST)
+
         # Dynamically adjust the lower and upper bounds of the frame
         frame_xy_coords = np.concatenate([agent_goal_positions, agent_positions[:, :2]])
+        print("FRAME: \n", frame_xy_coords)
+
+        scale, center = self.find_scale_and_center(frame_xy_coords)
+        print("SCALE: ", scale)
     
         # Draw the agent positions and goal positions with adjustments
+        scaled_goal_pos = []
+        scaled_agent_pos = []
+
         for agent_idx in range(agent_info.shape[0]):
 
             # Scale positions to fit within window
-            current_pos_screen = self.scale_coord(agent_positions[agent_idx], frame_xy_coords)
-            goal_pos_screen = self.scale_coord(agent_goal_positions[agent_idx], frame_xy_coords)
+            # current_pos_screen = self.scale_coord(agent_positions[agent_idx], frame_xy_coords)
+            # goal_pos_screen = self.scale_coord(agent_goal_positions[agent_idx], frame_xy_coords)
+            # print(current_pos_screen)
+
+            current_pos_screen = self.translate(agent_positions[agent_idx], center, scale)
+            goal_pos_screen = self.translate(agent_goal_positions[agent_idx], center, scale)
+            scaled_agent_pos.append(current_pos_screen)
+            scaled_goal_pos.append(goal_pos_screen)
             
             # Randomly sample a color from the color list for the agent
-            agent_color = random.choice(COLOR_LIST)
+            # agent_color = random.choice(COLOR_LIST)
+            agent_color = self.agent_colors[agent_idx]
             
             # Draw the current agent position with the randomly chosen color
             pygame.draw.rect(
@@ -258,8 +281,8 @@ class Env(gym.Env):
                 rect=pygame.Rect(
                     int(current_pos_screen[0]),
                     int(current_pos_screen[1]),
-                    VEH_WIDTH,
-                    VEH_HEIGHT,
+                    VEH_WIDTH * scale,
+                    VEH_HEIGHT * scale,
                 ),
             )
 
@@ -268,8 +291,11 @@ class Env(gym.Env):
                 surface=self.surf,
                 color=(0, 255, 0), # Green 
                 center=(int(goal_pos_screen[0]), int(goal_pos_screen[1])),
-                radius=GOAL_RADIUS,  
+                radius=GOAL_RADIUS * scale,  
             )
+
+        scaled_frame = np.concatenate([scaled_goal_pos, scaled_agent_pos])
+        print("SCALED FRAME:\n", scaled_frame)
 
         # # You can use this moving box example for testing
         # x_pos = 50 + t*10
@@ -293,12 +319,29 @@ class Env(gym.Env):
         # Extract the lower and upper bounds of the frame
         x_min, x_max = frame_xy_coords[:, 0].min(), frame_xy_coords[:, 0].max()
         y_min, y_max = frame_xy_coords[:, 1].min(), frame_xy_coords[:, 1].max()
-        
+
         # Scale coordinates 
         x_scaled = ((pos[0] - x_min) / (x_max - x_min)) * WINDOW_W
         y_scaled = ((pos[1] - y_min) / (y_max - y_min)) * WINDOW_H
+        
         return [x_scaled, y_scaled]
-    
+
+    def find_scale_and_center(self, frame_xy_coords):
+        x_min, x_max = frame_xy_coords[:, 0].min(), frame_xy_coords[:, 0].max()
+        y_min, y_max = frame_xy_coords[:, 1].min(), frame_xy_coords[:, 1].max()
+
+        x_center = (x_max + x_min) / 2
+        y_center = (y_max + y_min) / 2
+
+        content_W = x_max - x_min
+        content_H = y_max - y_min
+
+        scale_x = (WINDOW_W - 50) / content_W
+        scale_y = (WINDOW_H - 50) / content_H
+
+        return max(min(scale_x, scale_y), 0.25), (x_center, y_center)
+
+
     def close(self):
         """Close pygame application if open."""
         if self.screen is not None:
@@ -311,6 +354,14 @@ class Env(gym.Env):
         return np.transpose(
             np.array(pygame.surfarray.pixels3d(surf)), axes=(1, 0, 2)
         )
+    
+    def scale_tuple(self, tup, scale):
+        return tup(i * scale for i in tup)
+    
+    def translate(self, pos, center, scale):
+        x = (pos[0] - center[0]) * scale + (WINDOW_W / 2)
+        y = (pos[1] - center[1]) * scale + (WINDOW_H / 2)
+        return (x, y)
 
 if __name__ == "__main__":
     
@@ -323,7 +374,8 @@ if __name__ == "__main__":
         num_worlds=1, 
         max_cont_agents=1, 
         data_dir='waymo_data', 
-        device='cuda'
+        device='cuda',
+        # render_mode='human',
     )
     
     obs = env.reset()
@@ -346,6 +398,6 @@ if __name__ == "__main__":
         frames.append(frame.T)
 
     # Log video
-    wandb.log({"scene": wandb.Video(np.array(frames), fps=4, format="gif")})
+    wandb.log({"scene": wandb.Video(np.array(frames), fps=2, format="gif")})
     
     env.close()
