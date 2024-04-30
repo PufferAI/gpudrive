@@ -85,6 +85,7 @@ class Env(gym.Env):
             gpu_id=0,
             num_worlds=self.num_sims,
             auto_reset=True,
+            auto_reset=True,
             json_path=self.data_dir,
             params=params,
         )
@@ -406,6 +407,9 @@ class Env(gym.Env):
         )
 
         return state
+
+    def _norm(self, x, min_val, max_val):
+        return 2 * ((x - min_val) / (max_val - min_val)) - 1
 
     def normalize_partner_obs(self, state):
         """Normalize partner state features."""
