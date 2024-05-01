@@ -19,7 +19,7 @@ import logging
 
 logging.getLogger(__name__)
 
-# os.environ["MADRONA_MWGPU_KERNEL_CACHE"] = "./gpudrive_cache"
+os.environ["MADRONA_MWGPU_KERNEL_CACHE"] = "./gpudrive_cache"
 
 
 class Env(gym.Env):
@@ -409,6 +409,7 @@ class Env(gym.Env):
         return state
 
     def _norm(self, x, min_val, max_val):
+        """Normalize a value between -1 and 1."""
         return 2 * ((x - min_val) / (max_val - min_val)) - 1
 
     def normalize_partner_obs(self, state):
