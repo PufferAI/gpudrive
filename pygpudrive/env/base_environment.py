@@ -84,7 +84,7 @@ class Env(gym.Env):
             else gpudrive.madrona.ExecMode.CUDA,
             gpu_id=0,
             num_worlds=self.num_sims,
-            auto_reset=auto_reset,
+            auto_reset=True,
             json_path=self.data_dir,
             params=params,
         )
@@ -475,7 +475,7 @@ if __name__ == "__main__":
         device="cuda",
         render_mode="rgb_array",
     )
-
+    
     obs = env.reset()
     frames = []
 
