@@ -1,5 +1,6 @@
 import wandb
 import torch
+import torch
 
 # Import the EnvConfig dataclass
 from pygpudrive.env.config import EnvConfig

@@ -480,7 +480,7 @@ if __name__ == "__main__":
         device="cuda",
         render_mode="rgb_array",
     )
-    
+
     obs = env.reset()
     frames = []
 
