@@ -19,7 +19,9 @@
 # Data
 /formatted_json_v2_no_tl_train
 /waymo_data_new
-/maps_16
+/examples/benchmarks/results/
+/maps_16/
+
 
 # Logging
 /wandb
