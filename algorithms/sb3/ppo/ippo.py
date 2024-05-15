@@ -1,4 +1,3 @@
-import logging
 import torch
 from torch.nn import functional as F
 import numpy as np
@@ -7,35 +6,13 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.utils import get_schedule_fn
 from stable_baselines3.common.vec_env import VecEnv
-from torch import nn
 
-# Import masked rollout buffer class
-from algorithms.ppo.sb3.rollout_buffer import MaskedRolloutBuffer
-
-# From stable baselines
-def explained_variance(
-    y_pred: torch.tensor, y_true: torch.tensor
-) -> torch.tensor:
-    """
-    Computes fraction of variance that ypred explains about y.
-    Returns 1 - Var[y-ypred] / Var[y]
-
-    interpretation:
-        ev=0  =>  might as well have predicted zero
-        ev=1  =>  perfect prediction
-        ev<0  =>  worse than just predicting zero
-
-    :param y_pred: the prediction
-    :param y_true: the expected value
-    :return: explained variance of ypred and y
-    """
-    assert y_true.ndim == 1 and y_pred.ndim == 1
-    var_y = torch.var(y_true)
-    return torch.nan if var_y == 0 else 1 - torch.var(y_true - y_pred) / var_y
+from algorithms.sb3.rollout_buffer import MaskedRolloutBuffer
+from algorithms.sb3.utils import explained_variance
 
 
 class IPPO(PPO):
-    """Adapted Proximal Policy Optimization algorithm (PPO) that is compatible with multi-agent environments."""
+    """Adapted Proximal Policy Optimization algorithm class (PPO) that is compatible with multi-agent environments."""
 
     def __init__(
         self,
@@ -366,7 +343,7 @@ class IPPO(PPO):
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
-        # self.logger.record("train/explained_variance",explained_var)
+        self.logger.record("train/explained_variance", explained_var.item())
         if hasattr(self.policy, "log_std"):
             self.logger.record(
                 "train/std", torch.exp(self.policy.log_std).mean().item()
