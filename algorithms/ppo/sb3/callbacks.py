@@ -58,8 +58,9 @@ class MultiAgentCallback(BaseCallback):
             num_episodes_in_rollout * num_controlled_agents
         )
 
-        rollout_observations = (
-            self.locals["rollout_buffer"].observations.cpu().detach().numpy()
+        rollout_observations = np.nan_to_num(
+            self.locals["rollout_buffer"].observations.cpu().detach().numpy(),
+            nan=0,
         )
 
         # Average info across agents and episodes
@@ -136,8 +137,14 @@ class MultiAgentCallback(BaseCallback):
             obs = self._batchify_and_filter_obs(obs, env)
 
             frame = env.render()
-            frames.append(frame.T)
+            frames.append(frame)
 
         frames = np.array(frames)
 
-        wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
+        wandb.log(
+            {
+                "video": wandb.Video(
+                    np.moveaxis(frames, -1, 1), fps=10, format="gif"
+                )
+            }
+        )
