@@ -11,12 +11,12 @@ class ExperimentConfig:
     device: str = "cuda"
 
     # Dataset
-    data_dir: str = "waymo_data"
+    data_dir: str = "waymo_data_repeat"
 
-    # Rendering options
+    # Rendering settings
     render: bool = False
     render_mode: str = "rgb_array"
-    render_freq: int = 10
+    render_freq: int = 25
 
     # Hyperparameters
     policy: torch.nn.Module = FeedForwardPolicy
@@ -24,4 +24,9 @@ class ExperimentConfig:
     n_steps: int = 1024
     batch_size: int = 512
     verbose: int = 0
-    total_timesteps: int = 50_000_000
+    total_timesteps: int = 30_000_000
+
+    # Wandb
+    project_name = "gpudrive"
+    group_name = "PPO"
+    entity = None

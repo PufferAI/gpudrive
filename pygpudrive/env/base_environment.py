@@ -330,7 +330,6 @@ class Env(gym.Env):
             full_partner_obs = (
                 self.sim.partner_observations_tensor().to_torch()
             )
-
             if self.config.norm_obs:  # Normalize observations and then flatten
                 full_partner_obs = self.normalize_and_flatten_partner_obs(
                     full_partner_obs
@@ -427,16 +426,20 @@ class Env(gym.Env):
             obs: torch.Tensor of shape (num_worlds, kMaxAgentCount, kMaxAgentCount - 1, num_features)
         """
 
+        # TODO: Fix (there should not be nans in the obs)
+        # BUG: remove nan values
+        obs = torch.nan_to_num(obs, nan=0)
+
         # Speed
         obs[:, :, :, 0] /= self.config.max_speed
 
         # Relative position
-        obs[:, :, :, 1] /= self._norm(
+        obs[:, :, :, 1] = self._norm(
             obs[:, :, :, 1],
             self.config.min_rel_agent_pos,
             self.config.max_rel_agent_pos,
         )
-        obs[:, :, :, 2] /= self._norm(
+        obs[:, :, :, 2] = self._norm(
             obs[:, :, :, 2],
             self.config.min_rel_agent_pos,
             self.config.max_rel_agent_pos,
@@ -474,6 +477,8 @@ class Env(gym.Env):
         obs[:, :, :, 2] /= self.config.max_orientation_rad
 
         # TODO: Type of road entity
+        # Remove for now
+        obs = obs[:, :, :, :3]
 
         return obs.flatten(start_dim=2)
 
@@ -505,9 +510,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     config = EnvConfig(
-        ego_state=True,
+        ego_state=False,
         partner_obs=True,
-        road_map_obs=True,
+        road_map_obs=False,
         norm_obs=True,
     )
 

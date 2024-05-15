@@ -16,7 +16,9 @@ class EnvConfig:
     obs_radius: float = 10.0
 
     # Action space
-    steer_actions: torch.Tensor = torch.tensor([-0.6, 0.3, 0, 3, 0.6])
+    steer_actions: torch.Tensor = torch.tensor(
+        [-0.6, -0.3, -0.1, 0, 0.1, 0.3, 0.6]
+    )
     accel_actions: torch.Tensor = torch.tensor([-3, -1, 0, 1, 3])
 
     # Collision behavior
@@ -42,8 +44,8 @@ class EnvConfig:
     min_rel_agent_pos: int = -100
     max_rel_agent_pos: int = 100
     max_orientation_rad: float = 2 * np.pi
-    min_rm_coord: int = -100
-    max_rm_coord: int = 100
+    min_rm_coord: int = -300
+    max_rm_coord: int = 300
 
     # Datasete settings
     # first_n - Takes the first num_worlds files. Fails if num files < num_worlds.
