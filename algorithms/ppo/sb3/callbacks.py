@@ -63,15 +63,15 @@ class MultiAgentCallback(BaseCallback):
             nan=0,
         )
 
-        # Average info across agents and episodes
+        # Evaluation metrics
         rollout_info = self.locals["env"].infos
         for key, value in rollout_info.items():
             self.locals["env"].infos[key] = value / (
                 num_episodes_in_rollout * num_controlled_agents
             )
-            self.logger.record(f"rollout/{key}", self.locals["env"].infos[key])
+            self.logger.record(f"metrics/{key}", self.locals["env"].infos[key])
 
-        # Log
+        # Other
         self.logger.record("rollout/global_step", self.num_timesteps)
         self.logger.record(
             "rollout/num_episodes_in_rollout",
@@ -144,7 +144,10 @@ class MultiAgentCallback(BaseCallback):
         wandb.log(
             {
                 "video": wandb.Video(
-                    np.moveaxis(frames, -1, 1), fps=10, format="gif"
+                    np.moveaxis(frames, -1, 1),
+                    fps=10,
+                    format="gif",
+                    caption=f"Global step: {self.num_timesteps:,}",
                 )
             }
         )
