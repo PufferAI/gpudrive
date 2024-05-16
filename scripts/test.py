@@ -18,24 +18,28 @@ params.maxNumControlledVehicles = 0
 
 # Now use the 'params' instance when creating SimManager
 sim = gpudrive.SimManager(
-    exec_mode=gpudrive.madrona.ExecMode.CPU,
+    exec_mode=gpudrive.madrona.ExecMode.CUDA,
     gpu_id=0,
-    num_worlds=1,
-    auto_reset=True,
-    json_path="nocturne_data",
+    num_worlds=3,
+    auto_reset=False,
+    json_path="waymo_data_repeat",
     params=params,
-    enable_batch_renderer=True, # Optional parameter
-    batch_render_view_width=1024,
-    batch_render_view_height=1024
+    enable_batch_renderer=False, # Optional parameter
+    # batch_render_view_width=1024,
+    # batch_render_view_height=1024
 )
 
 frames = []
-for steps in range(90):
+for _ in range(200):
+    print(f"steps remaining: {sim.steps_remaining_tensor().to_torch()[0][0].item()}")
     sim.step()
-    rgb_tensor = sim.rgb_tensor().to_torch()
-    frames.append(rgb_tensor.cpu().numpy()[0,3,:,:,:3]) 
+    # rgb_tensor = sim.rgb_tensor().to_torch()
+    # frames.append(rgb_tensor.cpu().numpy()[0,3,:,:,:3]) 
     # Use the obs tensor for further processing
+    if sim.steps_remaining_tensor().to_torch()[0][0].item() == 1:
+        print("RESET")
+        for sim_idx in range(3):
+            sim.reset(sim_idx)
 
-import imageio
-
-imageio.mimsave('movie.gif', frames, duration=0.1)  # Save the frames as a gif
+# import imageio
+# imageio.mimsave('movie.gif', frames, duration=0.1)  # Save the frames as a gif

@@ -510,21 +510,13 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     config = EnvConfig(
-        ego_state=False,
+        ego_state=True,
         partner_obs=True,
-        road_map_obs=False,
+        road_map_obs=True,
         norm_obs=True,
     )
 
     NUM_CONT_AGENTS = 128
-    NUM_WORLDS = 1
-        road_map_obs=True,
-    )
-    # run = wandb.init(
-    #     project="gpudrive",
-    #     group="test_rendering",
-    # )
-    NUM_CONT_AGENTS = 0
     NUM_WORLDS = 3
 
     env = Env(
@@ -532,7 +524,7 @@ if __name__ == "__main__":
         num_worlds=NUM_WORLDS,
         auto_reset=False,
         max_cont_agents=NUM_CONT_AGENTS,  # Number of agents to control
-        data_dir="waymo_data",
+        data_dir="waymo_data_repeat",
         device="cuda",
         render_mode="rgb_array",
     )
@@ -541,7 +533,9 @@ if __name__ == "__main__":
     obs = env.reset()
     frames = []
 
-    for _ in range(90):
+    for _ in range(200):
+        
+        print(f'Step: {91 - env.steps_remaining}')
 
         # Take a random action (we're only going straight)
         rand_action = torch.Tensor(
@@ -555,16 +549,7 @@ if __name__ == "__main__":
 
         # Step the environment
         obs, reward, done, info = env.step(rand_action)
-
-        frame = env.render()
-        frames.append(frame)
-
-    import imageio
-
-    imageio.mimsave("out.gif", frames)
-    # Log video
-    # wandb.log({"scene": wandb.Video(np.array(frames), fps=10, format="gif")})
-    # wandb.log({"scene": wandb.Video(np.array(frames), fps=10, format="gif")})
-
-    # run.finish()
-    env.visualizer.destroy()
+        
+        if env.steps_remaining == 0:
+            
+            obs = env.reset()

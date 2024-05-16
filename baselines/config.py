@@ -29,4 +29,4 @@ class ExperimentConfig:
     # Wandb
     project_name = "gpudrive"
     group_name = "PPO"
-    entity = None
+    entity = "_emerge"
