@@ -529,13 +529,12 @@ if __name__ == "__main__":
         render_mode="rgb_array",
     )
 
-
     obs = env.reset()
     frames = []
 
     for _ in range(200):
-        
-        print(f'Step: {91 - env.steps_remaining}')
+
+        print(f"Step: {91 - env.steps_remaining}")
 
         # Take a random action (we're only going straight)
         rand_action = torch.Tensor(
@@ -549,7 +548,7 @@ if __name__ == "__main__":
 
         # Step the environment
         obs, reward, done, info = env.step(rand_action)
-        
+
         if env.steps_remaining == 0:
-            
+
             obs = env.reset()
