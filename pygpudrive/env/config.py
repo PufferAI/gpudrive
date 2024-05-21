@@ -13,9 +13,12 @@ class EnvConfig:
     ego_state: bool = True  # Ego vehicle state
     road_map_obs: bool = False  # Road graph
     partner_obs: bool = False  # Partner vehicle info
+
+    # Road observation algorithm
+    road_obs_algorithm: str = "k_nearest_roadpoints"
     obs_radius: float = 10.0
 
-    # Action space
+    # Action space (discrete)
     steer_actions: torch.Tensor = torch.tensor(
         [-0.6, -0.3, -0.1, 0, 0.1, 0.3, 0.6]
     )

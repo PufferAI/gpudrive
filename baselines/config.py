@@ -11,7 +11,7 @@ class ExperimentConfig:
     device: str = "cuda"
 
     # Dataset
-    data_dir: str = "waymo_data_repeat"
+    data_dir: str = "waymo_data"
 
     # Rendering settings
     render: bool = False
@@ -28,5 +28,5 @@ class ExperimentConfig:
 
     # Wandb
     project_name = "gpudrive"
-    group_name = "PPO"
+    group_name = "PPO_0521"
     entity = "_emerge"

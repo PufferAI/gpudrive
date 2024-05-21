@@ -53,9 +53,6 @@ class Env(gym.Env):
         # Configure the environment
         params = gpudrive.Parameters()
         params.polylineReductionThreshold = 0.5
-        params.observationRadius = self.config.obs_radius
-        params.polylineReductionThreshold = 1.0
-        params.observationRadius = 10.0
         params.rewardParams = reward_params
         params.IgnoreNonVehicles = self.config.remove_non_vehicles
 
@@ -67,6 +64,19 @@ class Env(gym.Env):
 
         # Set maximum number of controlled vehicles per environment
         params.maxNumControlledVehicles = max_cont_agents
+
+        # Choose road point reduction algorithm
+        # Only returns the k nearest road points within the radius
+        # K is set in consts.hpp `kMaxAgentMapObservationsCount`
+        params.observationRadius = self.config.obs_radius
+        if self.config.road_obs_algorithm == "k_nearest_roadpoints":
+            params.roadObservationAlgorithm = (
+                gpudrive.FindRoadObservationsWith.KNearestEntitiesWithRadiusFiltering
+            )
+        else:
+            params.roadObservationAlgorithm = (
+                gpudrive.FindRoadObservationsWith.AllEntitiesWithRadiusFiltering
+            )
 
         self.data_dir = data_dir
         self.num_sims = num_worlds
@@ -396,7 +406,6 @@ class Env(gym.Env):
 
     def render(self):
         return self.visualizer.draw(self.cont_agent_mask)
-        return self.visualizer.draw(self.cont_agent_mask)
 
     def normalize_ego_state(self, state):
         """Normalize ego state features."""
@@ -517,7 +526,7 @@ if __name__ == "__main__":
     )
 
     NUM_CONT_AGENTS = 128
-    NUM_WORLDS = 3
+    NUM_WORLDS = 1
 
     env = Env(
         config=config,

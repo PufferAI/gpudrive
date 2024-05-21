@@ -77,12 +77,20 @@ class MultiAgentCallback(BaseCallback):
             "rollout/num_episodes_in_rollout",
             num_episodes_in_rollout,
         )
-        self.logger.record("rollout/sum_reward", rollout_rewards.sum())
+        self.logger.record("rollout/sum_ep_return", rollout_rewards.sum())
         self.logger.record(
-            "rollout/avg_reward", mean_reward_per_agent_per_episode.item()
+            "rollout/avg_ep_return", mean_reward_per_agent_per_episode.item()
         )
-        self.logger.record("rollout/obs_max", rollout_observations.max())
-        self.logger.record("rollout/obs_min", rollout_observations.min())
+        self.logger.record("data/obs_max", rollout_observations.max())
+        self.logger.record("data/obs_min", rollout_observations.min())
+
+        hist = np.histogram(rollout_observations.reshape(-1))
+        wandb.log(
+            {
+                "global_step": self.num_timesteps,
+                "data/obs_hist": wandb.Histogram(np_histogram=hist),
+            }
+        )
 
         # Render the environment
         if self.config.render:
