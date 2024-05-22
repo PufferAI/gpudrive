@@ -101,25 +101,14 @@ class Env(gym.Env):
 
         # Rendering
         self.render_mode = render_mode
+        # By default, we render the first world
         self.world_render_idx = 0
-        agent_count = (
-            self.sim.shape_tensor()
-            .to_torch()[self.world_render_idx, :][0]
-            .item()
-        )
         self.visualizer = PyGameVisualizer(
             self.sim,
             self.world_render_idx,
             self.render_mode,
             self.config.dist_to_goal_threshold,
         )
-        self.visualizer = PyGameVisualizer(
-            self.sim,
-            self.world_render_idx,
-            self.render_mode,
-            self.config.dist_to_goal_threshold,
-        )
-
         # We only want to obtain information from vehicles we control
         # By default, the sim returns information for all vehicles in a scene
         # We construct a mask to filter out the information from the non-controlled vehicles (0)

@@ -16,15 +16,16 @@ class ExperimentConfig:
     # Rendering settings
     render: bool = False
     render_mode: str = "rgb_array"
-    render_freq: int = 25
+    render_freq: int = 10
+    render_n_worlds: int = 1
 
     # Hyperparameters
     policy: torch.nn.Module = FeedForwardPolicy
     seed: int = 42
-    n_steps: int = 1024
+    n_steps: int = 900
     batch_size: int = 512
     verbose: int = 0
-    total_timesteps: int = 30_000_000
+    total_timesteps: int = 150_000_000
 
     # Wandb
     project_name = "gpudrive"

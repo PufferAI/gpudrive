@@ -95,7 +95,8 @@ class MultiAgentCallback(BaseCallback):
         # Render the environment
         if self.config.render:
             if self.num_rollouts % self.config.render_freq == 0:
-                self._create_and_log_video()
+                for world_idx in range(self.config.render_n_worlds):
+                    self._create_and_log_video(render_world_idx=world_idx)
 
         self.num_rollouts += 1
 
@@ -151,7 +152,7 @@ class MultiAgentCallback(BaseCallback):
 
         wandb.log(
             {
-                "video": wandb.Video(
+                f"video_{render_world_idx}": wandb.Video(
                     np.moveaxis(frames, -1, 1),
                     fps=10,
                     format="gif",
