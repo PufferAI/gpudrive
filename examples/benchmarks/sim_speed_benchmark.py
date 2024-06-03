@@ -12,11 +12,8 @@ from multiprocessing import Process, Queue
 
 import gpudrive
 
-os.environ["MADRONA_MWGPU_KERNEL_CACHE"] = "./gpudrive_cache"
-
 MAX_CONT_AGENTS = 128
 EPISODE_LENGTH = 80
-
 
 def make_sim(
     data_dir,
@@ -34,12 +31,14 @@ def make_sim(
 
     # Create an instance of Parameters
     params = gpudrive.Parameters()
+    params.roadObservationAlgorithm = gpudrive.FindRoadObservationsWith.AllEntitiesWithRadiusFiltering
     params.polylineReductionThreshold = 0.5
     params.observationRadius = 10.0
     params.collisionBehaviour = gpudrive.CollisionBehaviour.AgentRemoved
     params.datasetInitOptions = gpudrive.DatasetInitOptions.FirstN
     params.rewardParams = reward_params
-    params.IgnoreNonVehicles = True
+    params.IgnoreNonVehicles = False
+    params.initOnlyValidAgentsAtFirstStep = False
 
     if actor_type == "random":
         params.maxNumControlledVehicles = MAX_CONT_AGENTS
@@ -90,6 +89,7 @@ def run_speed_bench(
 
     for sim_idx in range(batch_size):
         obs = sim.reset(sim_idx)
+        sim.step() # Step once to trigger reset
 
     # PROFILE STEPS
     for _ in range(episode_length):
@@ -118,9 +118,8 @@ def run_speed_bench(
         # STORE THROUGHPUT
         total_step_time += end_step - start_step
 
-        # TODO: Store valid object distance
         total_valid_frames += (
-            (sim.controlled_state_tensor().to_torch() == 1).sum().item()
+            sim.shape_tensor().to_torch()[:, 0].sum().item()
         )
         total_agent_frames += (
             sim.controlled_state_tensor().to_torch().flatten().shape[0]
@@ -128,10 +127,7 @@ def run_speed_bench(
 
     # Store valid objects per scene
     valid_obj_dist = (
-        (sim.controlled_state_tensor().to_torch() == 1)
-        .sum(axis=1)
-        .squeeze()
-        .tolist()
+        sim.shape_tensor().to_torch()[:, 0].tolist()
     )
 
     # PROFILE RESETS
@@ -185,9 +181,9 @@ def run_simulation(
 
 if __name__ == "__main__":
 
-    DATA_FOLDER = "/home/emerge/gpudrive/maps_16"
-    BATCH_SIZE_LIST = [1, 2, 4, 8, 16]
-    ACTOR_TYPE = "expert_actor"  # "random" #"expert_actor"
+    DATA_FOLDER = "formatted_json_v2_no_tl_train"
+    BATCH_SIZE_LIST = [1, 2, 4, 16, 32] #64
+    ACTOR_TYPE = "random" #"expert_actor"
     DEVICE = "cuda"
 
     # Get device info
@@ -256,7 +252,7 @@ if __name__ == "__main__":
 
     df_metadata = pd.DataFrame(
         data={
-            "sim_type": "Waymax",
+            "sim_type": "GPU Drive",
             "device_name": device_name,
             "num_envs (BS)": BATCH_SIZE_LIST,
             "num_valid_objects_per_scene (dist)": valid_obj_dist_lst,

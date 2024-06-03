@@ -67,6 +67,7 @@ def main(
 
     for sim_idx in range(num_worlds):
         obs = sim.reset(sim_idx)
+        sim.step() # Step once to trigger reset
 
     pid = os.getpid()
     print(f"PID: {pid}")
@@ -107,6 +108,7 @@ def main(
         if episode_step == episode_length:
             for sim_idx in range(num_worlds):
                 obs = sim.reset(sim_idx)
+                sim.step() # Step once to trigger reset
             episode_step = 0
 
     return time_checkpoints, free_memory, used_memory, perc_used

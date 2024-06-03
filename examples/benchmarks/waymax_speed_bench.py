@@ -342,8 +342,8 @@ def run_speed_bench(
 
 if __name__ == "__main__":
 
-    BATCH_SIZE_LIST = [1, 2, 4, 8, 16]
-    ACTOR_TYPE = "expert_actor"
+    BATCH_SIZE_LIST = [1, 2, 4, 16, 32]
+    ACTOR_TYPE = "random"
 
     # Get device info
     device_name = GPUtil.getGPUs()[0].name
