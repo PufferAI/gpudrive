@@ -15,6 +15,7 @@ import gpudrive
 MAX_CONT_AGENTS = 128
 EPISODE_LENGTH = 80
 
+
 def make_sim(
     data_dir,
     num_worlds,
@@ -31,7 +32,9 @@ def make_sim(
 
     # Create an instance of Parameters
     params = gpudrive.Parameters()
-    params.roadObservationAlgorithm = gpudrive.FindRoadObservationsWith.AllEntitiesWithRadiusFiltering
+    params.roadObservationAlgorithm = (
+        gpudrive.FindRoadObservationsWith.AllEntitiesWithRadiusFiltering
+    )
     params.polylineReductionThreshold = 0.5
     params.observationRadius = 10.0
     params.collisionBehaviour = gpudrive.CollisionBehaviour.AgentRemoved
@@ -89,7 +92,7 @@ def run_speed_bench(
 
     for sim_idx in range(batch_size):
         obs = sim.reset(sim_idx)
-        sim.step() # Step once to trigger reset
+        sim.step()  # Step once to trigger reset
 
     # PROFILE STEPS
     for _ in range(episode_length):
@@ -118,17 +121,13 @@ def run_speed_bench(
         # STORE THROUGHPUT
         total_step_time += end_step - start_step
 
-        total_valid_frames += (
-            sim.shape_tensor().to_torch()[:, 0].sum().item()
-        )
+        total_valid_frames += sim.shape_tensor().to_torch()[:, 0].sum().item()
         total_agent_frames += (
             sim.controlled_state_tensor().to_torch().flatten().shape[0]
         )
 
     # Store valid objects per scene
-    valid_obj_dist = (
-        sim.shape_tensor().to_torch()[:, 0].tolist()
-    )
+    valid_obj_dist = sim.shape_tensor().to_torch()[:, 0].tolist()
 
     # PROFILE RESETS
     for _ in range(do_n_resets):
@@ -182,8 +181,8 @@ def run_simulation(
 if __name__ == "__main__":
 
     DATA_FOLDER = "formatted_json_v2_no_tl_train"
-    BATCH_SIZE_LIST = [1, 2, 4, 16, 32] #64
-    ACTOR_TYPE = "random" #"expert_actor"
+    BATCH_SIZE_LIST = [1, 2, 4, 16, 32]  # 64
+    ACTOR_TYPE = "random"  # "expert_actor"
     DEVICE = "cuda"
 
     # Get device info
