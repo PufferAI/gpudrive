@@ -7,20 +7,15 @@ from datetime import datetime
 from time import perf_counter
 import GPUtil
 from tqdm import tqdm
-
 from multiprocessing import Process, Queue
-
 import gpudrive
-
-MAX_CONT_AGENTS = 128
-EPISODE_LENGTH = 80
-
 
 def make_sim(
     data_dir,
     num_worlds,
     device,
     actor_type,
+    data_init,
 ):
     """Make the gpudrive simulator."""
 
@@ -38,7 +33,10 @@ def make_sim(
     params.polylineReductionThreshold = 0.5
     params.observationRadius = 10.0
     params.collisionBehaviour = gpudrive.CollisionBehaviour.AgentRemoved
-    params.datasetInitOptions = gpudrive.DatasetInitOptions.FirstN
+    if data_init == "pad_n":
+        params.datasetInitOptions = gpudrive.DatasetInitOptions.PadN
+    else:
+        params.datasetInitOptions = gpudrive.DatasetInitOptions.FirstN
     params.rewardParams = reward_params
     params.IgnoreNonVehicles = False
     params.initOnlyValidAgentsAtFirstStep = False
@@ -69,6 +67,7 @@ def run_speed_bench(
     episode_length,
     do_n_resets,
     device,
+    data_init,
     q,
 ):
     """
@@ -89,6 +88,7 @@ def run_speed_bench(
         num_worlds=batch_size,
         device=device,
         actor_type=actor_type,
+        data_init=data_init,
     )
 
     for sim_idx in range(batch_size):
@@ -136,6 +136,7 @@ def run_speed_bench(
         start_reset = time.time()
         for sim_idx in range(batch_size):
             obs = sim.reset(sim_idx)
+            sim.step()
         end_reset = time.time()
         total_reset_time += end_reset - start_reset
 
@@ -161,6 +162,7 @@ def run_simulation(
     episode_length,
     do_n_resets,
     device,
+    data_init,
 ):
     q = Queue()
     p = Process(
@@ -173,6 +175,7 @@ def run_simulation(
             episode_length,
             do_n_resets,
             device,
+            data_init,
             q,
         ),
     )
@@ -183,10 +186,13 @@ def run_simulation(
 
 if __name__ == "__main__":
 
-    DATA_FOLDER = "formatted_json_v2_no_tl_train"
-    BATCH_SIZE_LIST = [128]#, 2, 4, 16, 32]  # 64
+    DATA_FOLDER = "formatted_json_v2_no_tl_valid"
+    MAX_CONT_AGENTS = 128
+    EPISODE_LENGTH = 80
+    BATCH_SIZE_LIST = [512]
     ACTOR_TYPE = "random"  # "expert_actor"
     DEVICE = "cuda"
+    DATASET_INIT = "pad_n"
 
     # Get device info
     device_name = GPUtil.getGPUs()[0].name
@@ -215,7 +221,8 @@ if __name__ == "__main__":
             actor_type=ACTOR_TYPE,
             data_dir=DATA_FOLDER,
             episode_length=EPISODE_LENGTH,
-            do_n_resets=80,
+            do_n_resets=EPISODE_LENGTH,
+            data_init=DATASET_INIT,
             device=DEVICE,
         )
         (
