@@ -23,10 +23,13 @@
 # Data
 hpc/overlay*
 /formatted_json_v2_no_tl_train
+/formatted_json_v2_no_tl_valid
 /waymo_data_new
 /maps_16
 **/*ppo_model*/
 /wandb*
+*.sif
+/google-cloud-sdk/*
 
 # Logging
 /wandb

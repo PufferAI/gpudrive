@@ -3,7 +3,11 @@
 
 - Step 1: Request a node
 ```
-srun --nodes=1 --tasks-per-node=1 --cpus-per-task=1 --mem=40GB --gres=gpu:a100:1 --time=12:00:00 --pty /bin/bash
+srun --nodes=1 --tasks-per-node=1 --cpus-per-task=1 --mem=40GB --gres=gpu:a100:1 --time=03:00:00 --pty /bin/bash
+```
+
+```
+srun --nodes=1 --tasks-per-node=1 --cpus-per-task=1 --mem=40GB --gres=gpu:rtx8000:1 --time=02:00:00 --pty /bin/bash
 ```
 
 - Step 2: Launch Singularity image
