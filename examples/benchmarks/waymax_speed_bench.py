@@ -8,6 +8,7 @@ import GPUtil
 from tqdm import tqdm
 from datetime import datetime
 import pandas as pd
+from functools import partial
 from waymax import dataloader
 from waymax import env as _env
 from waymax import config as _config
@@ -82,6 +83,57 @@ def create_random_actor(
         select_action=select_action,
         name=f"random_actor",
     )
+    
+def get_agent_obs(idx, state, global_traj, current_global_tl):
+    
+    # Get global roadgraph points from agent i's position
+    global_rg = datatypes.roadgraph.filter_topk_roadgraph_points(
+        state.roadgraph_points,
+        state.sim_trajectory.xy[:, idx, state.timestep, :],
+        topk=200,
+    )
+
+    # Get agent pose: Position, orientation, and rotation matrix
+    pose = datatypes.observation.ObjectPose2D.from_center_and_yaw(
+        xy=state.sim_trajectory.xy[:, idx, state.timestep, :],
+        yaw=state.sim_trajectory.yaw[:, idx, state.timestep],
+        valid=state.sim_trajectory.valid[:, idx, state.timestep],
+    )
+
+    # Transform to relative coordinates using agent i's pose
+    sim_traj = datatypes.observation.transform_trajectory(global_traj, pose)
+    local_rg = datatypes.observation.transform_roadgraph_points(global_rg, pose)
+    local_tl = datatypes.observation.transform_traffic_lights(current_global_tl, pose)
+
+    # Unpack traffic lights, there are a maximum of 16 traffic lights per scene
+    # Not all traffic lights are valid
+    valid_tl_ids = local_tl.valid.reshape(-1)
+
+    tl_valid_states = jnp.where(valid_tl_ids, local_tl.state.reshape(-1), 0)
+    tl_x_valid = jnp.where(valid_tl_ids, local_tl.x.reshape(-1), 0)
+    tl_y_valid = jnp.where(valid_tl_ids, local_tl.y.reshape(-1), 0)
+    tl_z_valid = jnp.where(valid_tl_ids, local_tl.z.reshape(-1), 0)
+    tl_lane_ids_valid = jnp.where(valid_tl_ids, local_tl.lane_ids.reshape(-1), 0)
+
+    # Construct agent observation
+    agent_obs = jnp.concatenate(
+        (
+            sim_traj.xyz.reshape(-1),
+            sim_traj.yaw.reshape(-1),
+            sim_traj.vel_xy.reshape(-1),
+            sim_traj.vel_yaw.reshape(-1),
+            local_rg.xyz.reshape(-1),
+            local_rg.dir_xyz.reshape(-1),
+            local_rg.types.reshape(-1),
+            tl_valid_states,
+            tl_x_valid,
+            tl_y_valid,
+            tl_z_valid,
+            tl_lane_ids_valid,
+        )
+    )
+
+    return agent_obs
 
 
 def run_speed_bench(
@@ -137,7 +189,7 @@ def run_speed_bench(
 
         # Compute metrics
         step_return = env.reward(state, action)
-
+        
         # Transition to next state
         next_state = jit_step(state, action)
         return next_state, next_state
@@ -155,65 +207,20 @@ def run_speed_bench(
             state.log_traffic_light, jnp.array(state.timestep, int), 1, axis=-1
         )
 
-        # Get obs for every controlled / valid agent in relative coordinates
-        for idx in range(MAX_CONTROLLED_ACROSS_SCENES):
-
-            # Get global roadgraph points
-            global_rg = datatypes.roadgraph.filter_topk_roadgraph_points(
-                state.roadgraph_points,
-                state.sim_trajectory.xy[:, idx, state.timestep, :],
-                topk=3,
-            )
-
-            # Get agent pose: Position, orientation, and rotation matrix
-            pose = datatypes.observation.ObjectPose2D.from_center_and_yaw(
-                xy=state.sim_trajectory.xy[:, idx, state.timestep, :],
-                yaw=state.sim_trajectory.yaw[:, idx, state.timestep],
-                valid=state.sim_trajectory.valid[:, idx, state.timestep],
-            )
-
-            # Transform to relative coordinates using agent i's pose
-            sim_traj = datatypes.observation.transform_trajectory(
-                global_traj, pose
-            )
-            local_rg = datatypes.observation.transform_roadgraph_points(
-                global_rg, pose
-            )
-            local_tl = datatypes.observation.transform_traffic_lights(
-                current_global_tl, pose
-            )
-
-            # Unpack traffic lights, there are a maximum of 16 traffic lights per scene
-            # Not all traffic lights are valid
-            valid_tl_ids = local_tl.valid.reshape(-1)
-
-            tl_valid_states = jnp.where(
-                valid_tl_ids, local_tl.state.reshape(-1), 0
-            )
-            tl_x_valid = jnp.where(valid_tl_ids, local_tl.x.reshape(-1), 0)
-            tl_y_valid = jnp.where(valid_tl_ids, local_tl.y.reshape(-1), 0)
-            tl_z_valid = jnp.where(valid_tl_ids, local_tl.z.reshape(-1), 0)
-            tl_lane_ids_valid = jnp.where(
-                valid_tl_ids, local_tl.lane_ids.reshape(-1), 0
-            )
-
-            # Construct agent observation
-            agent_obs = jnp.concatenate(
-                (
-                    sim_traj.xyz.reshape(-1),
-                    sim_traj.yaw.reshape(-1),
-                    sim_traj.vel_xy.reshape(-1),
-                    sim_traj.vel_yaw.reshape(-1),
-                    local_rg.xyz.reshape(-1),
-                    local_rg.dir_xyz.reshape(-1),
-                    local_rg.types.reshape(-1),
-                    tl_valid_states,
-                    tl_x_valid,
-                    tl_y_valid,
-                    tl_z_valid,
-                    tl_lane_ids_valid,
-                )
-            )
+        # Get agent observations
+        # Apply vmap over the get_agent_obs function for all controlled agents
+        vmap_get_agent_obs = jax.vmap(
+            partial(
+                get_agent_obs, 
+                state=state, 
+                global_traj=global_traj, 
+                current_global_tl=current_global_tl
+            ), in_axes=0)
+        
+        # Generate observations for all agents
+        agent_observations = vmap_get_agent_obs(
+            jnp.arange(MAX_CONTROLLED_ACROSS_SCENES)
+        )
 
         # Get actions
         outputs = [
@@ -307,7 +314,7 @@ def run_speed_bench(
     state = env.reset(scenario)
     start_step = perf_counter()
     _, state_traj = jax.lax.scan(
-        f=f_scan_step,
+        f=f_scan_step_with_obs_comp, #f_scan_step,
         init=state,
         xs=None,
         length=episode_length,
@@ -342,7 +349,7 @@ def run_speed_bench(
 
 if __name__ == "__main__":
 
-    BATCH_SIZE_LIST = [1, 2, 4, 16, 32]
+    BATCH_SIZE_LIST = [1, 2, 4, 8, 16, 32]
     ACTOR_TYPE = "random"
 
     # Get device info
