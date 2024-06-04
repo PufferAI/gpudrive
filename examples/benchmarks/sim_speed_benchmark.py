@@ -80,6 +80,7 @@ def run_speed_bench(
     total_reset_time = 0
     total_valid_frames = 0
     total_agent_frames = 0
+    total_controlled_frames = 0
     # buffer = []
 
     # Make simulator
@@ -122,6 +123,7 @@ def run_speed_bench(
         total_step_time += end_step - start_step
 
         total_valid_frames += sim.shape_tensor().to_torch()[:, 0].sum().item()
+        total_controlled_frames += (sim.controlled_state_tensor().to_torch() == 1).sum().item()
         total_agent_frames += (
             sim.controlled_state_tensor().to_torch().flatten().shape[0]
         )
@@ -144,6 +146,7 @@ def run_speed_bench(
             do_n_resets,
             episode_length,
             total_valid_frames,
+            total_controlled_frames,
             total_agent_frames,
             valid_obj_dist,
         )
@@ -181,7 +184,7 @@ def run_simulation(
 if __name__ == "__main__":
 
     DATA_FOLDER = "formatted_json_v2_no_tl_train"
-    BATCH_SIZE_LIST = [1, 2, 4, 16, 32]  # 64
+    BATCH_SIZE_LIST = [128]#, 2, 4, 16, 32]  # 64
     ACTOR_TYPE = "random"  # "expert_actor"
     DEVICE = "cuda"
 
@@ -195,6 +198,7 @@ if __name__ == "__main__":
     tot_resets = np.zeros(len(BATCH_SIZE_LIST))
     tot_steps = np.zeros(len(BATCH_SIZE_LIST))
     tot_valid_frames = np.zeros(len(BATCH_SIZE_LIST))
+    tot_cont_frames = np.zeros(len(BATCH_SIZE_LIST))
     tot_agent_frames = np.zeros(len(BATCH_SIZE_LIST))
     valid_obj_dist_lst = []
 
@@ -220,6 +224,7 @@ if __name__ == "__main__":
             tot_resets[idx],
             tot_steps[idx],
             tot_valid_frames[idx],
+            tot_cont_frames[idx],
             tot_agent_frames[idx],
             valid_obj_dist,
         ) = result
@@ -240,6 +245,7 @@ if __name__ == "__main__":
             "avg_time_per_step (ms)": (tot_step_times / tot_steps) * 1000,
             "all_agent_fps (throughput)": tot_agent_frames / tot_step_times,
             "val_agent_fps (goodput)": tot_valid_frames / tot_step_times,
+            "cont_agent_fps": tot_cont_frames / tot_step_times,
             "total_steps": tot_steps,
             "total_resets": tot_resets,
             "tot_step_time (s)": tot_step_times,
