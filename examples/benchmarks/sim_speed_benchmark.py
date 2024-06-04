@@ -10,6 +10,9 @@ from tqdm import tqdm
 from multiprocessing import Process, Queue
 import gpudrive
 
+MAX_CONT_AGENTS = 128
+EPISODE_LENGTH = 80
+
 def make_sim(
     data_dir,
     num_worlds,
@@ -153,7 +156,6 @@ def run_speed_bench(
         )
     )
 
-
 def run_simulation(
     batch_size,
     max_num_objects,
@@ -180,15 +182,13 @@ def run_simulation(
         ),
     )
     p.start()
-    p.join()  # Wait for the process to finish
+    p.join() # Wait for the process to finish
     return q.get()
 
 
 if __name__ == "__main__":
 
-    DATA_FOLDER = "formatted_json_v2_no_tl_valid"
-    MAX_CONT_AGENTS = 128
-    EPISODE_LENGTH = 80
+    DATA_FOLDER = "formatted_benchmark_one_scene"
     BATCH_SIZE_LIST = [512]
     ACTOR_TYPE = "random"  # "expert_actor"
     DEVICE = "cuda"
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
     df = pd.DataFrame(
         data={
-            "simulator": "GPU Drive",
+            "simulator": "GPUDrive",
             "device_name": device_name,
             "device_mem": device_total_memory,
             "actors": ACTOR_TYPE,
