@@ -13,6 +13,7 @@ import gpudrive
 MAX_CONT_AGENTS = 128
 EPISODE_LENGTH = 80
 
+
 def make_sim(
     data_dir,
     num_worlds,
@@ -126,7 +127,9 @@ def run_speed_bench(
         total_step_time += end_step - start_step
 
         total_valid_frames += sim.shape_tensor().to_torch()[:, 0].sum().item()
-        total_controlled_frames += (sim.controlled_state_tensor().to_torch() == 1).sum().item()
+        total_controlled_frames += (
+            (sim.controlled_state_tensor().to_torch() == 1).sum().item()
+        )
         total_agent_frames += (
             sim.controlled_state_tensor().to_torch().flatten().shape[0]
         )
@@ -156,6 +159,7 @@ def run_speed_bench(
         )
     )
 
+
 def run_simulation(
     batch_size,
     max_num_objects,
@@ -182,7 +186,7 @@ def run_simulation(
         ),
     )
     p.start()
-    p.join() # Wait for the process to finish
+    p.join()  # Wait for the process to finish
     return q.get()
 
 
