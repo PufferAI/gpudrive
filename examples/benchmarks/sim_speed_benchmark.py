@@ -192,11 +192,11 @@ def run_simulation(
 
 if __name__ == "__main__":
 
-    DATA_FOLDER = "formatted_benchmark_one_scene"
-    BATCH_SIZE_LIST = [512]
+    DATA_FOLDER = "formatted_json_v2_no_tl_train"
+    BATCH_SIZE_LIST = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
     ACTOR_TYPE = "random"  # "expert_actor"
     DEVICE = "cuda"
-    DATASET_INIT = "pad_n"
+    DATASET_INIT = "first_n"
 
     # Get device info
     device_name = GPUtil.getGPUs()[0].name
