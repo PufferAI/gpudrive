@@ -153,10 +153,8 @@ class SB3MultiAgentEnv(VecEnv):
 
         if done_worlds.any().item():
             self._update_info_dict(info, done_worlds)
-            for world_idx in done_worlds:
-                self.num_episodes += 1
-                self.reset(world_idx=world_idx)
-                # print(f"world {world_idx} is reset")
+            self.num_episodes += len(done_worlds)
+            self._env.sim.reset(done_worlds.tolist())            
 
         # Override nan placeholders for alive agents
         self.buf_rews[self.dead_agent_mask] = torch.nan
