@@ -18,7 +18,7 @@ For more details, see our [paper]() and the [introduction tutorials](https://git
 
 ## Installation 🛠️
 
-To build GPUDrive, ensure you have all the dependencies listed [here](https://github.com/shacklettbp/madrona#dependencies). Briefly, you'll need a recent version of Python and CMake, as well as Xcode on macOS or Visual Studio on Windows.
+To build GPUDrive, ensure you have all the dependencies listed [here](https://github.com/shacklettbp/madrona#dependencies). Briefly, you'll need a recent version of Python and CMake (>= version `3.22`), as well as Xcode on macOS or Visual Studio on Windows.
 
 Once you have the required dependencies, clone the repository (don't forget --recursive!):
 
@@ -46,27 +46,7 @@ cd gpudrive
 
 Then, you can *choose* between two options for building the simulator:
 
-- **Option 1**: Manual Install
-
-For Linux and macOS, use the following commands:
-
-```bash
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j # cores to build with, e.g. 32
-cd ..
-```
-
-For Windows, open the cloned repository in Visual Studio and build the project using the integrated `cmake` functionality.
-
-Next, set up the Python components of the repository with pip:
-
-```bash
-pip install -e . # Add -Cpackages.madrona_escape_room.ext-out-dir=PATH_TO_YOUR_BUILD_DIR on Windows
-```
-
-- **Option 2**:  Poetry install
+- **Option 1**:  Poetry install
 
 First create a conda environment using `environment.yml`:
 
@@ -84,6 +64,27 @@ Run:
 
 ```bash
 poetry install
+```
+
+
+- **Option 2**: Manual Install
+
+For Linux and macOS, use the following commands:
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j # cores to build with, e.g. 32
+cd ..
+```
+
+For Windows, open the cloned repository in Visual Studio and build the project using the integrated `cmake` functionality.
+
+Next, set up the Python components of the repository with pip:
+
+```bash
+pip install -e . # Add -Cpackages.madrona_escape_room.ext-out-dir=PATH_TO_YOUR_BUILD_DIR on Windows
 ```
 
 Test whether the installation was successful by importing the simulator:
