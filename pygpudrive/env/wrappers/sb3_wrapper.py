@@ -141,9 +141,9 @@ class SB3MultiAgentEnv(VecEnv):
         # Step the environment
         self._env.step_dynamics(self.actions_tensor)
 
-        reward = self._env.get_rewards()
-        done = self._env.get_dones()
-        info = self._env.get_infos()
+        reward = self._env.get_rewards().clone()
+        done = self._env.get_dones().clone()
+        info = self._env.get_infos().clone()
 
         # CHECK IF A WORLD IS DONE -> RESET
         done_worlds = torch.where(
