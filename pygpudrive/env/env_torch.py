@@ -143,6 +143,7 @@ class GPUDriveTorchEnv(GPUDriveGymEnv):
             ego_states_unprocessed = (
                 self.sim.self_observation_tensor().to_torch()
             )
+            ego_states_unprocessed[~self.cont_agent_mask] = 0
             if self.config.norm_obs:
                 ego_states = self.normalize_ego_state(ego_states_unprocessed)
             else:
@@ -155,6 +156,7 @@ class GPUDriveTorchEnv(GPUDriveGymEnv):
             partner_observations = (
                 self.sim.partner_observations_tensor().to_torch()
             )
+            partner_observations[~self.cont_agent_mask] = 0
             if self.config.norm_obs:  # Normalize observations and then flatten
                 partner_observations = self.normalize_and_flatten_partner_obs(
                     partner_observations
@@ -172,7 +174,7 @@ class GPUDriveTorchEnv(GPUDriveGymEnv):
             road_map_observations_unprocessed = (
                 self.sim.agent_roadmap_tensor().to_torch()
             )
-
+            road_map_observations_unprocessed[~self.cont_agent_mask] = 0
             if self.config.norm_obs:
                 road_map_observations = self.normalize_and_flatten_map_obs(
                     road_map_observations_unprocessed
