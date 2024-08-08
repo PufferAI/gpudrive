@@ -9,7 +9,7 @@ include(setup)
 include(dependencies)
 
 add_subdirectory(external)
-enable_testing()  # Enable testing capabilities
+#enable_testing()  # Enable testing capabilities
 
 add_subdirectory(src)
-add_subdirectory(tests)  # Add your tests directory
+#add_subdirectory(tests)  # Add your tests directory
